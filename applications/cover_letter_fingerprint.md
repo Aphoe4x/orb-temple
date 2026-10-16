@@ -1,9 +1,0 @@
-# Cover Letter — Fingerprint (Backend Engineer, Core APIs)
-
-I'm a backend engineer with 3+ years of professional experience building and maintaining production APIs and data layers, and Fingerprint's focus on high-performance, real-time backend systems is the direction I want to grow in.
-
-My core qualification is hands-on production backend work: at Artgidi (2-year remote contract) I maintained PHP/Laravel services on a live application, resolved performance and reliability bugs, optimized MySQL queries and indexing as data volume grew, and integrated third-party payment APIs — server-to-server calls, webhooks, idempotent order flows. On my Laravel Booking System, concurrency correctness is enforced at the database layer (transactional locking + unique indexes), the same discipline required when scaling APIs under real traffic. I meet the 2+ years backend requirement with this production track record, plus Git-based workflows and staging-to-production deployment pipelines.
-
-Your job description asks for Go and/or Node.js "with a willingness to learn." I have hands-on Node.js experience: I built a full-stack e-commerce application with a Node.js/Express REST API, Supabase/PostgreSQL data layer, Google OAuth 2.0, and Mailgun transactional email — designing the SQL schema and API endpoints myself. My deeper production foundation is PHP/Laravel with years of MySQL optimization, and I bring the backend fundamentals that transfer: HTTP semantics, API design, auth between services, database behavior under load. I'd welcome the chance to grow into Go on real problems at Fingerprint.
-
-I communicate fluently in English, work independently in fully remote async teams (UK, Canada, Nigeria clients so far), and I'm authorized to work from my location in Nigeria without visa sponsorship.
