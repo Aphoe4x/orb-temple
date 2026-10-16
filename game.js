@@ -1,223 +1,289 @@
 (function() {
-var STATE={MENU:'menu',PLAYING:'playing',PAUSED:'paused',GAME_OVER:'gameOver'};
-var gameState=STATE.MENU, score=0, coins=0, distance=0;
-var highScore=parseInt(localStorage.getItem('neonRunnerHighScore'))||0;
-var gameSpeed=CONFIG.gameplay.baseSpeed, targetSpeed=CONFIG.gameplay.baseSpeed;
-var spawnTimer=0, coinTimer=0, powerupTimer=0;
-var nextBoss=CONFIG.boss.spawnDistance, bossActive=false, boss=null, shakeAmt=0;
-var activePU=null, puTimer=0, shieldOn=false, magnetOn=false, dblScoreOn=false, slowMoOn=false;
-var combo=0, comboT=0, comboMult=1;
-var lane=0, jumping=false, sliding=false, jumpVel=0, slideT=0, pY=0, pZ=0, scrollZ=0;
+var STATE={MENU:'menu',PLAYING:'playing',GAME_OVER:'gameOver',LEVEL_UP:'levelUp'};
+var gameState=STATE.MENU;
+var score=0, level=1, combo=0;
+var highScore=parseInt(localStorage.getItem('orbTempleHighScore'))||0;
+var ballsOnTrack=[];
+var shootingBalls=[];
+var explosions=[];
+var currentColor=0, nextColor=1;
+var aimAngle=0;
 var startNgPlayer=null;
 
+// THREE SETUP
 var container=document.getElementById('game-container');
 var scene=new THREE.Scene();
-scene.background=new THREE.Color(CONFIG.world.skyColor);
-scene.fog=new THREE.FogExp2(CONFIG.world.fogColor,CONFIG.world.fogDensity);
-var camera=new THREE.PerspectiveCamera(CONFIG.camera.fov,window.innerWidth/window.innerHeight,.1,200);
-camera.position.set(CONFIG.camera.position.x,CONFIG.camera.position.y,CONFIG.camera.position.z);
+scene.background=new THREE.Color(0x0a0a15);
+scene.fog=new THREE.FogExp2(0x0a0a15,0.01);
+var camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,.1,100);
+camera.position.set(0,12,10);
+camera.lookAt(0,0,0);
 var renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth,window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.3;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.2;
 container.appendChild(renderer.domElement);
 
+// LIGHTS
 scene.add(new THREE.AmbientLight(0x404060,.6));
-var dirLight=new THREE.DirectionalLight(0xffffff,1.2);
-dirLight.position.set(5,10,5); dirLight.castShadow=true;
-dirLight.shadow.mapSize.width=2048; dirLight.shadow.mapSize.height=2048;
-dirLight.shadow.camera.left=-15; dirLight.shadow.camera.right=15; dirLight.shadow.camera.top=15; dirLight.shadow.camera.bottom=-15;
+var dirLight=new THREE.DirectionalLight(0xffffff,1);
+dirLight.position.set(5,15,10); dirLight.castShadow=true;
+dirLight.shadow.mapSize.width=1024; dirLight.shadow.mapSize.height=1024;
 scene.add(dirLight);
-var pLight=new THREE.PointLight(CONFIG.character.bodyColor,2,12); pLight.position.set(0,3,2); scene.add(pLight);
-var bLight=new THREE.PointLight(CONFIG.character.accentColor,2,40); bLight.position.set(0,5,-15); scene.add(bLight);
+var pLight=new THREE.PointLight(0xffd700,.5,20); pLight.position.set(0,5,5); scene.add(pLight);
 
 var audio=createAudio(CONFIG);
-var character=createCharacter(CONFIG); scene.add(character.group);
-var trail=createTrail(CONFIG); scene.add(trail.points);
-var ground=createGround(CONFIG); scene.add(ground);
-var skybox=createSkybox(CONFIG); scene.add(skybox.stars);
-var dayNight=createDayNightCycle(scene,CONFIG);
-var city=createCity(scene);
-var weather=createWeather(scene,CONFIG);
-var obstacles=[],collectibles=[],powerups=[],explosions=[];
+var temple=createTemple(scene);
+var frog=createFrog(scene,CONFIG);
 
+// SPIRAL PATH
+var pathPoints=[];
+var spiralTurns=3, spiralRadius=8, spiralHeight=0;
+for(var i=0;i<=200;i++){
+    var t=i/200;
+    var angle=t*spiralTurns*Math.PI*2;
+    var r=spiralRadius*(1-t*0.7);
+    pathPoints.push(new THREE.Vector3(Math.cos(angle)*r,0,Math.sin(angle)*r));
+}
+var pathCurve=new THREE.CatmullRomCurve3(pathPoints);
+
+// Draw path
+var pathGeo=new THREE.TubeGeometry(pathCurve,200,.15,8,false);
+var pathMat=new THREE.MeshStandardMaterial({color:0x334455,metalness:.5,roughness:.3,emissive:0x112233,emissiveIntensity:.2});
+var pathMesh=new THREE.Mesh(pathGeo,pathMat);
+pathMesh.position.y=-.3;
+scene.add(pathMesh);
+
+// End hole
+var endHole=new THREE.Mesh(new THREE.CircleGeometry(.5,16),new THREE.MeshStandardMaterial({color:0x000000,emissive:0xff0000,emissiveIntensity:.5}));
+endHole.rotation.x=-Math.PI/2;
+var endPoint=pathCurve.getPoint(1);
+endHole.position.set(endPoint.x,-.2,endPoint.z);
+scene.add(endHole);
+
+// UI
 document.getElementById('btn-start').addEventListener('click',function(){audio.resume();startGame();});
 document.getElementById('btn-restart').addEventListener('click',function(){audio.resume();startGame();});
-document.getElementById('btn-resume').addEventListener('click',resumeGame);
 
-document.addEventListener('keydown',function(e){
-    if(gameState===STATE.MENU&&e.code==='Enter'){audio.resume();startGame();}
-    else if(gameState===STATE.GAME_OVER&&e.code==='Enter'){audio.resume();startGame();}
-    else if(gameState===STATE.PLAYING){
-        if(e.code==='KeyA'||e.code==='ArrowLeft')moveLeft();
-        if(e.code==='KeyD'||e.code==='ArrowRight')moveRight();
-        if(e.code==='KeyW'||e.code==='ArrowUp'||e.code==='Space')jump();
-        if(e.code==='KeyS'||e.code==='ArrowDown')slide();
-        if(e.code==='Escape')pauseGame();
-    } else if(gameState===STATE.PAUSED&&e.code==='Escape')resumeGame();
+// INPUT
+var mouseX=0,mouseY=0;
+document.addEventListener('mousemove',function(e){
+    mouseX=(e.clientX/window.innerWidth)*2-1;
+    mouseY=-(e.clientY/window.innerHeight)*2+1;
+    aimAngle=Math.atan2(mouseX,mouseY);
 });
-function moveLeft(){if(lane>-1){lane--;character.group.rotation.z=.15;}}
-function moveRight(){if(lane<1){lane++;character.group.rotation.z=-.15;}}
-function jump(){if(!jumping&&!sliding){jumping=true;jumpVel=CONFIG.gameplay.jumpForce;character.setJumping(true);audio.playJump();}}
-function slide(){if(!sliding&&!jumping){sliding=true;slideT=CONFIG.gameplay.slideDuration;character.setSliding(true);audio.playSlide();}}
+document.addEventListener('click',function(e){
+    if(gameState!==STATE.PLAYING)return;
+    shoot();
+});
+document.addEventListener('keydown',function(e){
+    if(e.code==='Space'&&gameState===STATE.PLAYING){e.preventDefault();swapBalls();}
+    if(e.code==='Enter'&&gameState===STATE.MENU){audio.resume();startGame();}
+    if(e.code==='Enter'&&gameState===STATE.GAME_OVER){audio.resume();startGame();}
+});
 
-var isMobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
-if(isMobile)document.getElementById('mobile-controls').classList.remove('hidden');
-var joystickZone=document.getElementById('joystick-zone');
-if(joystickZone){
-    var knob=document.getElementById('joystick-knob');
-    var joyActive=false, joyStartX=0;
-    joystickZone.addEventListener('touchstart',function(e){joyActive=true;joyStartX=e.touches[0].clientX;knob.style.transform='translateX(-10px)';},{passive:true});
-    joystickZone.addEventListener('touchmove',function(e){if(!joyActive)return;var dx=e.touches[0].clientX-joyStartX;if(dx>30)moveRight();if(dx<-30)moveLeft();knob.style.transform='translateX('+(dx>20?20:dx<-20?-20:dx)+'px)';},{passive:true});
-    joystickZone.addEventListener('touchend',function(){joyActive=false;knob.style.transform='';},{passive:true});
+function swapBalls(){
+    var temp=currentColor;
+    currentColor=nextColor;
+    nextColor=temp;
+    frog.ballMat.color.setHex(CONFIG.orbColors[currentColor]);
+    frog.ballMat.emissive.setHex(CONFIG.orbColors[currentColor]);
+    frog.nextBallMat.color.setHex(CONFIG.orbColors[nextColor]);
+    frog.nextBallMat.emissive.setHex(CONFIG.orbColors[nextColor]);
 }
-var btnJump=document.getElementById('btn-jump');
-if(btnJump)btnJump.addEventListener('touchstart',function(e){e.preventDefault();jump();},{passive:false});
-var btnSlide=document.getElementById('btn-slide');
-if(btnSlide)btnSlide.addEventListener('touchstart',function(e){e.preventDefault();slide();},{passive:false});
 
-function initPlayer(){initStartNg().then(function(p){startNgPlayer=p;if(p){character.applyStartNgStyle(p.style);var pc=document.getElementById('player-card');if(pc)pc.hidden=false;var pn=document.getElementById('player-name');if(pn)pn.textContent=p.name||'Player';var pa=document.getElementById('player-account');if(pa)pa.textContent=p.account?'@'+p.account:'Guest';}});}
-document.addEventListener('visibilitychange',function(){if(!document.hidden)initPlayer();});
+function shoot(){
+    var color=CONFIG.orbColors[currentColor];
+    var ballMat=new THREE.MeshStandardMaterial({color:color,metalness:.5,roughness:.2,emissive:color,emissiveIntensity:.3});
+    var ball=new THREE.Mesh(new THREE.SphereGeometry(CONFIG.orbRadius,16,16),ballMat);
+    var dir=new THREE.Vector3(Math.sin(aimAngle),0,Math.cos(aimAngle));
+    ball.position.set(dir.x*.8,.5,dir.z*.8);
+    ball.userData={dir:dir,speed:CONFIG.shootSpeed,color:currentColor};
+    scene.add(ball);
+    shootingBalls.push(ball);
+    audio.playShoot();
+    // Cycle colors
+    currentColor=nextColor;
+    nextColor=Math.floor(Math.random()*CONFIG.orbColors.length);
+    frog.ballMat.color.setHex(CONFIG.orbColors[currentColor]);
+    frog.ballMat.emissive.setHex(CONFIG.orbColors[currentColor]);
+    frog.nextBallMat.color.setHex(CONFIG.orbColors[nextColor]);
+    frog.nextBallMat.emissive.setHex(CONFIG.orbColors[nextColor]);
+}
+
+function spawnBall(){
+    if(ballsOnTrack.length>=CONFIG.maxBalls)return;
+    var colorIdx=Math.floor(Math.random()*CONFIG.orbColors.length);
+    var color=CONFIG.orbColors[colorIdx];
+    var mat=new THREE.MeshStandardMaterial({color:color,metalness:.5,roughness:.2,emissive:color,emissiveIntensity:.3});
+    var ball=new THREE.Mesh(new THREE.SphereGeometry(CONFIG.orbRadius,16,16),mat);
+    var pos=pathCurve.getPoint(0);
+    ball.position.set(pos.x,0,pos.z);
+    ball.userData={color:colorIdx,t:0,speed:CONFIG.ballSpeed*(1+level*.1)};
+    scene.add(ball);
+    ballsOnTrack.push(ball);
+}
 
 function startGame(){
-    score=0;coins=0;distance=0;gameSpeed=CONFIG.gameplay.baseSpeed;targetSpeed=CONFIG.gameplay.baseSpeed;
-    spawnTimer=0;coinTimer=0;powerupTimer=0;nextBoss=CONFIG.boss.spawnDistance;
-    bossActive=false;boss=null;shakeAmt=0;activePU=null;puTimer=0;
-    shieldOn=false;magnetOn=false;dblScoreOn=false;slowMoOn=false;combo=0;comboT=0;comboMult=1;
-    lane=0;jumping=false;sliding=false;jumpVel=0;pY=0;pZ=0;
-    obstacles.forEach(function(o){o.dispose(o.mesh);});collectibles.forEach(function(c){c.dispose(c.mesh);});
-    powerups.forEach(function(p){p.dispose(p.mesh);});
-    if(boss){boss.dispose();boss=null;}
-    obstacles=[];collectibles=[];powerups=[];explosions=[];
-    character.reset();character.setShield(false);
-    if(startNgPlayer)character.applyStartNgStyle(startNgPlayer.style);
-    document.getElementById('score').textContent='0';document.getElementById('coins').textContent='0';
+    score=0;level=1;combo=0;
+    ballsOnTrack.forEach(function(b){scene.remove(b);});
+    shootingBalls.forEach(function(b){scene.remove(b);});
+    ballsOnTrack=[];shootingBalls=[];explosions=[];
+    currentColor=Math.floor(Math.random()*CONFIG.orbColors.length);
+    nextColor=Math.floor(Math.random()*CONFIG.orbColors.length);
+    frog.ballMat.color.setHex(CONFIG.orbColors[currentColor]);
+    frog.ballMat.emissive.setHex(CONFIG.orbColors[currentColor]);
+    frog.nextBallMat.color.setHex(CONFIG.orbColors[nextColor]);
+    frog.nextBallMat.emissive.setHex(CONFIG.orbColors[nextColor]);
+    document.getElementById('score').textContent='0';
+    document.getElementById('level').textContent='1';
     document.getElementById('high-score').textContent=highScore;
-    document.getElementById('speed-fill').style.width='0%';
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('gameover-screen').classList.add('hidden');
-    document.getElementById('pause-screen').classList.add('hidden');
     gameState=STATE.PLAYING;audio.startMusic();
+    // Spawn initial balls
+    for(var i=0;i<5;i++){
+        setTimeout(function(){spawnBall();},i*500);
+    }
 }
-function pauseGame(){gameState=STATE.PAUSED;document.getElementById('pause-screen').classList.remove('hidden');}
-function resumeGame(){gameState=STATE.PLAYING;document.getElementById('pause-screen').classList.add('hidden');}
+
 function gameOver(){
-    gameState=STATE.GAME_OVER;audio.playCrash();audio.stopMusic();
-    explosions.push(createExplosion(scene,CONFIG.character.bodyColor));shakeAmt=.6;
-    var nh=score>highScore;if(nh){highScore=score;localStorage.setItem('neonRunnerHighScore',highScore);}
+    gameState=STATE.GAME_OVER;audio.playGameOver();audio.stopMusic();
+    var nh=score>highScore;if(nh){highScore=score;localStorage.setItem('orbTempleHighScore',highScore);}
     document.getElementById('final-score').textContent=score;
-    document.getElementById('final-coins').textContent=coins;
-    document.getElementById('final-distance').textContent=Math.floor(distance)+'m';
-    document.getElementById('new-highscore').classList.toggle('hidden',!nh);
+    document.getElementById('final-level').textContent=level;
     document.getElementById('gameover-screen').classList.remove('hidden');
-    if(startNgPlayer)saveStartNgScore({score:score,distance:Math.floor(distance),coins:coins});
+    if(startNgPlayer)saveStartNgScore({score:score,distance:level,coins:0});
 }
 
-var patternZ=-80;
-function spawnPattern(){
-    var types=CONFIG.obstacles.types;
-    var safeLane=Math.floor(Math.random()*3)-1;
-    var z=pZ-70;
-    var numObs=1+Math.floor(Math.random()*2);
-    for(var i=0;i<numObs;i++){
-        var type=types[Math.floor(Math.random()*types.length)];
-        var obs=createObstacle(type,CONFIG);
-        var obsLane=Math.floor(Math.random()*3)-1;
-        if(obsLane===safeLane)obsLane=(obsLane+1)%3-1;
-        obs.mesh.position.x=obsLane*CONFIG.gameplay.laneWidth;
-        obs.mesh.position.z=z-i*8;
-        scene.add(obs.mesh);obstacles.push(obs);
-    }
-    for(var j=0;j<5;j++){
-        var coin=createCoin(CONFIG);
-        coin.mesh.position.x=safeLane*CONFIG.gameplay.laneWidth;
-        coin.mesh.position.z=z-j*2;
-        scene.add(coin.mesh);collectibles.push(coin);
-    }
+function levelComplete(){
+    gameState=STATE.LEVEL_UP;audio.playLevelUp();
+    document.getElementById('level-screen').classList.remove('hidden');
+    setTimeout(function(){
+        document.getElementById('level-screen').classList.add('hidden');
+        level++;
+        document.getElementById('level').textContent=level;
+        ballsOnTrack.forEach(function(b){scene.remove(b);});
+        ballsOnTrack=[];
+        for(var i=0;i<5+level;i++){
+            setTimeout(function(){spawnBall();},i*400);
+        }
+        gameState=STATE.PLAYING;
+    },2000);
 }
 
-function activatePU(type){
-    activePU=type;puTimer=CONFIG.powerups.duration;
-    if(type==='shield'){shieldOn=true;character.setShield(true);}
-    if(type==='magnet')magnetOn=true;if(type==='doubleScore')dblScoreOn=true;if(type==='slowMo')slowMoOn=true;
-    document.getElementById('powerup-display').textContent=type.toUpperCase()+' ACTIVE';
-    document.getElementById('powerup-container').classList.remove('hidden');audio.playPowerup();
-}
-function deactivatePU(){
-    if(activePU==='shield'){shieldOn=false;character.setShield(false);}
-    magnetOn=false;dblScoreOn=false;slowMoOn=false;activePU=null;
-    document.getElementById('powerup-container').classList.add('hidden');
-}
-
-function hit(px,py,pz,pH,obs){
-    var m=obs.mesh,oHW=obs.width/2+.3,oHH=obs.height/2,pHW=.35,pHH=(sliding?.35:pH/2);
-    return Math.abs(px-m.position.x)<(pHW+oHW)&&Math.abs(py+(sliding?.35:pH/2)-m.position.y)<(pHH+oHH)&&Math.abs(pz-m.position.z)<1.2;
-}
-function hitCoin(px,py,pz,coin){
-    var c=coin.mesh.position,dx=Math.abs(px-c.x),dy=Math.abs((py+1)-c.y),dz=Math.abs(pz-c.z);
-    if(magnetOn)return dx<5&&dy<5&&dz<5;return dx<1&&dy<1.5&&dz<1.2;
-}
-
+var spawnTimer=0;
 var clock=new THREE.Clock();
 function animate(){
     requestAnimationFrame(animate);
     var dt=Math.min(clock.getDelta(),.05);
-    if(slowMoOn)dt*=.4;
+
     if(gameState===STATE.PLAYING){
-        gameSpeed+=(targetSpeed-gameSpeed)*.02;
-        targetSpeed=Math.min(CONFIG.gameplay.maxSpeed,targetSpeed+CONFIG.gameplay.speedIncrement);
-        if(activePU==='slowMo')targetSpeed*=.6;
-        pZ-=gameSpeed*dt;distance+=gameSpeed*dt;scrollZ+=gameSpeed*dt;
-        ground.position.z=scrollZ%2;
-        character.group.position.z=pZ;
-        var fovT=(gameSpeed-CONFIG.gameplay.baseSpeed)/(CONFIG.gameplay.maxSpeed-CONFIG.gameplay.baseSpeed);
-        camera.fov=CONFIG.camera.fov+fovT*(CONFIG.camera.fovMax-CONFIG.camera.fov);
-        camera.updateProjectionMatrix();
-        var tx=lane*CONFIG.gameplay.laneWidth;
-        character.group.position.x+=(tx-character.group.position.x)*10*dt;
-        character.group.rotation.z+=(0-character.group.rotation.z)*8*dt;
-        if(jumping){jumpVel+=CONFIG.gameplay.gravity*dt;pY+=jumpVel*dt;if(pY<=0){pY=0;jumping=false;jumpVel=0;character.setJumping(false);}}
-        character.group.position.y=pY;
-        if(sliding){slideT-=dt;if(slideT<=0){sliding=false;character.setSliding(false);}}
-        character.update(dt,gameSpeed);
-        pLight.position.set(character.group.position.x,3,pZ+2);
-        if(CONFIG.character.hasTrail&&!sliding)trail.emit(character.group.position.x,pY+.5,pZ-.5);
-        trail.update(dt);
-        spawnTimer+=dt;if(spawnTimer>=CONFIG.obstacles.spawnRate){spawnTimer=0;spawnPattern();}
-        coinTimer+=dt;if(coinTimer>=3){coinTimer=0;if(Math.random()<CONFIG.powerups.spawnChance)spawnPowerup();}
-        dayNight.update(dt);
-        city.update(dt,gameSpeed,pZ);
-        weather.update(dt,false);
-        if(distance>=nextBoss&&!bossActive){bossActive=true;boss=createBoss(CONFIG);boss.group.position.z=pZ-40;scene.add(boss.group);document.getElementById('boss-health-container').classList.remove('hidden');document.getElementById('boss-health-fill').style.width='100%';audio.playBossAlert();}
-        var pH=2*CONFIG.character.scale;
-        for(var i=obstacles.length-1;i>=0;i--){
-            var obs=obstacles[i];obs.update(dt,gameSpeed);
-            if(!sliding||obs.type!=='tall'){if(hit(character.group.position.x,pY,pZ,pH,obs)){if(shieldOn){shieldOn=false;character.setShield(false);obs.dispose(obs.mesh);obstacles.splice(i,1);shakeAmt=.2;audio.playCrash();continue;}gameOver();return;}}
-            if(obs.mesh.position.z>pZ+15){scene.remove(obs.mesh);obstacles.splice(i,1);}
+        // Spawn balls
+        spawnTimer+=dt;
+        if(spawnTimer>=1.5){spawnTimer=0;spawnBall();}
+
+        // Move balls along path
+        for(var i=ballsOnTrack.length-1;i>=0;i--){
+            var ball=ballsOnTrack[i];
+            ball.userData.t+=ball.userData.speed*dt*0.01;
+            if(ball.userData.t>=1){
+                scene.remove(ball);
+                ballsOnTrack.splice(i,1);
+                gameOver();
+                return;
+            }
+            var pos=pathCurve.getPoint(ball.userData.t);
+            ball.position.set(pos.x,0,pos.z);
         }
-        if(bossActive&&boss){document.getElementById('boss-health-fill').style.width=(boss.health/boss.maxHealth*100)+'%';boss.update(dt);}
-        for(var i=collectibles.length-1;i>=0;i--){
-            var c=collectibles[i];
-            if(hitCoin(character.group.position.x,pY,pZ,c)){combo++;comboT=CONFIG.combo.window;comboMult=Math.min(CONFIG.combo.maxMultiplier,1+Math.floor(combo/3));coins++;score+=CONFIG.collectibles.coinValue*(dblScoreOn?2:1)*comboMult;document.getElementById('coins').textContent=coins;if(combo>=3){document.getElementById('combo-display').textContent='COMBO x'+comboMult;document.getElementById('combo-display').classList.remove('hidden');}audio.playCoin(combo);scene.remove(c.mesh);collectibles.splice(i,1);continue;}
-            if(c.mesh.position.z>pZ+15){scene.remove(c.mesh);collectibles.splice(i,1);}
+
+        // Move shooting balls
+        for(var i=shootingBalls.length-1;i>=0;i--){
+            var sb=shootingBalls[i];
+            sb.position.add(sb.userData.dir.clone().multiplyScalar(sb.userData.speed*dt));
+            // Check collision with track balls
+            for(var j=ballsOnTrack.length-1;j>=0;j--){
+                var tb=ballsOnTrack[j];
+                if(sb.position.distanceTo(tb.position)<CONFIG.orbRadius*2){
+                    // Insert ball into track
+                    var newBall=new THREE.Mesh(new THREE.SphereGeometry(CONFIG.orbRadius,16,16),new THREE.MeshStandardMaterial({color:CONFIG.orbColors[sb.userData.color],metalness:.5,roughness:.2,emissive:CONFIG.orbColors[sb.userData.color],emissiveIntensity:.3}));
+                    newBall.position.copy(sb.position);
+                    newBall.userData={color:sb.userData.color,t:tb.userData.t,speed:tb.userData.speed};
+                    scene.add(newBall);
+                    ballsOnTrack.push(newBall);
+                    scene.remove(sb);
+                    shootingBalls.splice(i,1);
+                    // Check for matches
+                    checkMatches(newBall);
+                    break;
+                }
+            }
+            // Remove if too far
+            if(sb.position.length()>20){
+                scene.remove(sb);
+                shootingBalls.splice(i,1);
+            }
         }
-        for(var i=powerups.length-1;i>=0;i--){var pu=powerups[i];var dx=Math.abs(character.group.position.x-pu.mesh.position.x),dy=Math.abs((pY+1)-pu.mesh.position.y),dz=Math.abs(pZ-pu.mesh.position.z);if(dx<1&&dy<1.5&&dz<1.5){activatePU(pu.type);scene.remove(pu.mesh);powerups.splice(i,1);continue;}if(pu.mesh.position.z>pZ+15){scene.remove(pu.mesh);powerups.splice(i,1);}}
-        if(activePU){puTimer-=dt;document.getElementById('powerup-timer').style.width=(puTimer/CONFIG.powerups.duration*100)+'%';if(puTimer<=0)deactivatePU();}
-        if(comboT>0){comboT-=dt;if(comboT<=0){combo=0;comboMult=1;document.getElementById('combo-display').classList.add('hidden');}}
-        score=Math.floor(distance)+coins*CONFIG.collectibles.coinValue*comboMult;
+
+        // Combo timer
+        if(combo>0){combo-=dt;if(combo<=0)combo=0;}
+
+        // Score
         document.getElementById('score').textContent=score;
-        var sp=((gameSpeed-CONFIG.gameplay.baseSpeed)/(CONFIG.gameplay.maxSpeed-CONFIG.gameplay.baseSpeed))*100;
-        document.getElementById('speed-fill').style.width=sp+'%';
-        if(shakeAmt>0){shakeAmt-=dt*2;camera.position.x+=(Math.random()-.5)*shakeAmt;camera.position.y+=(Math.random()-.5)*shakeAmt;}
+
+        // Level up check
+        if(score>=level*CONFIG.levelUpScore){
+            levelComplete();
+        }
     }
-    skybox.update(dt);
-    for(var i=explosions.length-1;i>=0;i--){if(!explosions[i].update(dt))explosions.splice(i,1);}
-    if(shakeAmt<=0){camera.position.x=character.group.position.x*.4+Math.sin(Date.now()*.0003)*.15;camera.position.y=CONFIG.camera.position.y+Math.sin(Date.now()*.0005)*.08;}
-    camera.lookAt(character.group.position.x*.2,CONFIG.camera.lookAt.y,pZ-8);
+
+    // Explosions
+    for(var i=explosions.length-1;i>=0;i--){
+        if(!explosions[i].update(dt))explosions.splice(i,1);
+    }
+
+    // Frog rotation
+    frog.group.rotation.y=aimAngle;
+
     renderer.render(scene,camera);
 }
+
+function checkMatches(insertedBall){
+    var color=insertedBall.userData.color;
+    var matches=[insertedBall];
+    var idx=ballsOnTrack.indexOf(insertedBall);
+    // Check backwards
+    for(var i=idx-1;i>=0;i--){
+        if(ballsOnTrack[i].userData.color===color)matches.push(ballsOnTrack[i]);
+        else break;
+    }
+    // Check forwards
+    for(var i=idx+1;i<ballsOnTrack.length;i++){
+        if(ballsOnTrack[i].userData.color===color)matches.push(ballsOnTrack[i]);
+        else break;
+    }
+    if(matches.length>=CONFIG.matchCount){
+        // Destroy matches
+        matches.forEach(function(b){
+            var idx2=ballsOnTrack.indexOf(b);
+            if(idx2>=0)ballsOnTrack.splice(idx2,1);
+            explosions.push(createExplosion(scene,CONFIG.orbColors[color],b.position.x,b.position.y,b.position.z));
+            scene.remove(b);
+        });
+        combo++;
+        var points=CONFIG.scorePerOrb*matches.length*combo;
+        score+=points;
+        audio.playMatch(combo);
+        document.getElementById('combo-display').textContent='COMBO x'+combo+'! +'+points;
+        document.getElementById('combo-display').classList.remove('hidden');
+        setTimeout(function(){document.getElementById('combo-display').classList.add('hidden');},1500);
+        audio.playExplosion();
+    }
+}
+
 window.addEventListener('resize',function(){camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
 document.getElementById('high-score').textContent=highScore;
-initPlayer();animate();
+initPlayer();
+animate();
 })();

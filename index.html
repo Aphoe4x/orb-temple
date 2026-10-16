@@ -3,67 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Runner</title>
+    <title>Orb Temple — Zuma Style Puzzle</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="game-container"></div>
+
     <div id="player-card" class="hidden">
         <img id="player-face" alt="">
         <div class="player-info"><b id="player-name">Player</b><span id="player-account"></span></div>
         <button id="player-sign-in" class="hidden">Sign in</button>
     </div>
+
     <div id="hud">
         <div id="score-panel">
             <div class="hud-item"><span class="hud-label">SCORE</span><span id="score">0</span></div>
-            <div class="hud-item"><span class="hud-label">COINS</span><span id="coins">0</span></div>
+            <div class="hud-item"><span class="hud-label">LEVEL</span><span id="level">1</span></div>
             <div class="hud-item"><span class="hud-label">BEST</span><span id="high-score">0</span></div>
         </div>
-        <div id="speed-indicator"><span class="hud-label">SPEED</span><div id="speed-bar"><div id="speed-fill"></div></div></div>
+        <div id="combo-display" class="hidden"></div>
     </div>
-    <div id="combo-display" class="hidden"></div>
-    <div id="powerup-container" class="hidden"><span id="powerup-display"></span><div id="powerup-bar"><div id="powerup-timer"></div></div></div>
-    <div id="boss-health-container" class="hidden"><span class="boss-label">BOSS</span><div id="boss-health-bar"><div id="boss-health-fill"></div></div></div>
-    <div id="unlock-notification" class="hidden"></div>
-    <div id="mobile-controls" class="hidden">
-        <div id="joystick-zone"><div id="joystick-base"><div id="joystick-knob"></div></div></div>
-        <div id="mobile-buttons"><button id="btn-jump">JUMP</button><button id="btn-slide">SLIDE</button></div>
-    </div>
+
     <div id="start-screen" class="overlay">
         <div class="panel">
-            <h1>NEON RUNNER</h1>
-            <p class="subtitle">3D Endless Runner</p>
+            <h1>ORB TEMPLE</h1>
+            <p class="subtitle">Zuma-Style Puzzle Game</p>
             <div class="controls-info">
-                <div class="control"><kbd>A</kbd>/<kbd>D</kbd> Move</div>
-                <div class="control"><kbd>W</kbd>/<kbd>Space</kbd> Jump</div>
-                <div class="control"><kbd>S</kbd> Slide</div>
+                <div class="control"><kbd>Mouse</kbd> Aim</div>
+                <div class="control"><kbd>Click</kbd> Shoot</div>
+                <div class="control"><kbd>Space</kbd> Swap ball</div>
             </div>
+            <p class="hint">Match 3+ orbs of the same color to destroy them!<br>Don't let them reach the end of the path!</p>
             <button id="btn-start" class="btn-primary">START GAME</button>
-            <p class="hint">Press <kbd>Enter</kbd></p>
         </div>
     </div>
+
     <div id="gameover-screen" class="overlay hidden">
         <div class="panel">
             <h1>GAME OVER</h1>
             <div class="final-stats">
                 <div class="stat"><span>Score</span><strong id="final-score">0</strong></div>
-                <div class="stat"><span>Coins</span><strong id="final-coins">0</strong></div>
-                <div class="stat"><span>Distance</span><strong id="final-distance">0m</strong></div>
+                <div class="stat"><span>Level</span><strong id="final-level">1</strong></div>
             </div>
-            <p id="new-highscore" class="hidden">NEW HIGH SCORE!</p>
             <button id="btn-restart" class="btn-primary">PLAY AGAIN</button>
         </div>
     </div>
-    <div id="pause-screen" class="overlay hidden">
-        <div class="panel"><h1>PAUSED</h1><button id="btn-resume" class="btn-primary">RESUME</button></div>
+
+    <div id="level-screen" class="overlay hidden">
+        <div class="panel">
+            <h1>LEVEL COMPLETE!</h1>
+            <p class="subtitle">Get ready for the next level...</p>
+        </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
     <script src="config.js"></script>
     <script src="audio.js"></script>
     <script src="startng.js"></script>
     <script src="effects.js"></script>
-    <script src="obstacles.js"></script>
-    <script src="character.js"></script>
     <script src="game.js"></script>
 </body>
 </html>
