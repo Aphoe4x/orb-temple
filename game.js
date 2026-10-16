@@ -20,17 +20,17 @@ var renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth,window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.2;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.3;
 container.appendChild(renderer.domElement);
 
-scene.add(new THREE.AmbientLight(0x404060,.5));
-var dirLight=new THREE.DirectionalLight(0xffffff,1);
+scene.add(new THREE.AmbientLight(0x404060,.6));
+var dirLight=new THREE.DirectionalLight(0xffffff,1.2);
 dirLight.position.set(5,10,5); dirLight.castShadow=true;
-dirLight.shadow.mapSize.width=1024; dirLight.shadow.mapSize.height=1024;
-dirLight.shadow.camera.left=-10; dirLight.shadow.camera.right=10; dirLight.shadow.camera.top=10; dirLight.shadow.camera.bottom=-10;
+dirLight.shadow.mapSize.width=2048; dirLight.shadow.mapSize.height=2048;
+dirLight.shadow.camera.left=-15; dirLight.shadow.camera.right=15; dirLight.shadow.camera.top=15; dirLight.shadow.camera.bottom=-15;
 scene.add(dirLight);
-var pLight=new THREE.PointLight(CONFIG.character.bodyColor,2,10); pLight.position.set(0,3,2); scene.add(pLight);
-var bLight=new THREE.PointLight(CONFIG.character.accentColor,1.5,35); bLight.position.set(0,5,-15); scene.add(bLight);
+var pLight=new THREE.PointLight(CONFIG.character.bodyColor,2,12); pLight.position.set(0,3,2); scene.add(pLight);
+var bLight=new THREE.PointLight(CONFIG.character.accentColor,2,40); bLight.position.set(0,5,-15); scene.add(bLight);
 
 var audio=createAudio(CONFIG);
 var character=createCharacter(CONFIG); scene.add(character.group);
@@ -38,6 +38,8 @@ var trail=createTrail(CONFIG); scene.add(trail.points);
 var ground=createGround(CONFIG); scene.add(ground);
 var skybox=createSkybox(CONFIG); scene.add(skybox.stars);
 var dayNight=createDayNightCycle(scene,CONFIG);
+var city=createCity(scene);
+var weather=createWeather(scene,CONFIG);
 var obstacles=[],collectibles=[],powerups=[],explosions=[];
 
 document.getElementById('btn-start').addEventListener('click',function(){audio.resume();startGame();});
@@ -102,7 +104,7 @@ function pauseGame(){gameState=STATE.PAUSED;document.getElementById('pause-scree
 function resumeGame(){gameState=STATE.PLAYING;document.getElementById('pause-screen').classList.add('hidden');}
 function gameOver(){
     gameState=STATE.GAME_OVER;audio.playCrash();audio.stopMusic();
-    explosions.push(createExplosion(scene,CONFIG.character.bodyColor));shakeAmt=.5;
+    explosions.push(createExplosion(scene,CONFIG.character.bodyColor));shakeAmt=.6;
     var nh=score>highScore;if(nh){highScore=score;localStorage.setItem('neonRunnerHighScore',highScore);}
     document.getElementById('final-score').textContent=score;
     document.getElementById('final-coins').textContent=coins;
@@ -185,6 +187,8 @@ function animate(){
         spawnTimer+=dt;if(spawnTimer>=CONFIG.obstacles.spawnRate){spawnTimer=0;spawnPattern();}
         coinTimer+=dt;if(coinTimer>=3){coinTimer=0;if(Math.random()<CONFIG.powerups.spawnChance)spawnPowerup();}
         dayNight.update(dt);
+        city.update(dt,gameSpeed,pZ);
+        weather.update(dt,false);
         if(distance>=nextBoss&&!bossActive){bossActive=true;boss=createBoss(CONFIG);boss.group.position.z=pZ-40;scene.add(boss.group);document.getElementById('boss-health-container').classList.remove('hidden');document.getElementById('boss-health-fill').style.width='100%';audio.playBossAlert();}
         var pH=2*CONFIG.character.scale;
         for(var i=obstacles.length-1;i>=0;i--){
