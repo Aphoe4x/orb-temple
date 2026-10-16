@@ -55,12 +55,12 @@ for(var i=0;i<3;i++){
     scene.add(ring);
 }
 
-// SPIRAL PATH - simple approach
+// SPIRAL PATH
 var pathPoints=[];
 var totalPoints=100;
 for(var i=0;i<totalPoints;i++){
     var t=i/totalPoints;
-    var angle=t*Math.PI*4; // 2 full rotations
+    var angle=t*Math.PI*4;
     var radius=10*(1-t*0.6);
     pathPoints.push(new THREE.Vector3(Math.cos(angle)*radius,0,Math.sin(angle)*radius));
 }
@@ -93,7 +93,6 @@ frogGroup.add(frogHead);
 var eyeMat=new THREE.MeshStandardMaterial({color:0xffff00,emissive:0xffff00,emissiveIntensity:0.6});
 var le=new THREE.Mesh(new THREE.SphereGeometry(0.1),eyeMat); le.position.set(-0.15,0.85,0.45); frogGroup.add(le);
 var re=new THREE.Mesh(new THREE.SphereGeometry(0.1),eyeMat); re.position.set(0.15,0.85,0.45); frogGroup.add(re);
-// Current ball
 var ballMat=new THREE.MeshStandardMaterial({color:CONFIG.orbColors[0],metalness:0.5,roughness:0.2,emissive:CONFIG.orbColors[0],emissiveIntensity:0.4});
 var currentBall=new THREE.Mesh(new THREE.SphereGeometry(CONFIG.orbRadius,16,16),ballMat);
 currentBall.position.set(0,0.5,0.7);
@@ -106,8 +105,8 @@ document.getElementById('btn-restart').addEventListener('click',function(){audio
 
 // INPUT
 document.addEventListener('mousemove',function(e){
-    mouseX=(e.clientX/window.innerWidth)*2-1;
-    mouseY=-(e.clientY/window.innerHeight)*2+1;
+    var mouseX=(e.clientX/window.innerWidth)*2-1;
+    var mouseY=-(e.clientY/window.innerHeight)*2+1;
     aimAngle=Math.atan2(mouseX,mouseY);
 });
 document.addEventListener('click',function(e){
@@ -195,12 +194,9 @@ var clock=new THREE.Clock();
 function animate(){
     requestAnimationFrame(animate);
     var dt=Math.min(clock.getDelta(),0.05);
-
     if(gameState===STATE.PLAYING){
         spawnTimer+=dt;
         if(spawnTimer>=1.5){spawnTimer=0;spawnBall();}
-
-        // Move balls along path
         for(var i=ballsOnTrack.length-1;i>=0;i--){
             var ball=ballsOnTrack[i];
             ball.userData.pathIndex+=ball.userData.speed*dt;
@@ -216,16 +212,12 @@ function animate(){
             var pos=pathPoints[idx].clone().lerp(pathPoints[nextIdx],t);
             ball.position.set(pos.x,0,pos.z);
         }
-
-        // Move shooting balls
         for(var i=shootingBalls.length-1;i>=0;i--){
             var sb=shootingBalls[i];
             sb.position.add(sb.userData.dir.clone().multiplyScalar(sb.userData.speed*dt));
-            // Check collision with track balls
             for(var j=ballsOnTrack.length-1;j>=0;j--){
                 var tb=ballsOnTrack[j];
                 if(sb.position.distanceTo(tb.position)<CONFIG.orbRadius*2.2){
-                    // Insert into track
                     var newBall=new THREE.Mesh(new THREE.SphereGeometry(CONFIG.orbRadius,16,16),new THREE.MeshStandardMaterial({color:CONFIG.orbColors[sb.userData.color],metalness:.5,roughness:.2,emissive:CONFIG.orbColors[sb.userData.color],emissiveIntensity:.4}));
                     newBall.position.copy(sb.position);
                     newBall.userData={color:sb.userData.color,pathIndex:tb.userData.pathIndex,speed:tb.userData.speed};
@@ -242,20 +234,14 @@ function animate(){
                 shootingBalls.splice(i,1);
             }
         }
-
         if(combo>0){combo-=dt;if(combo<=0)combo=0;}
         document.getElementById('score').textContent=score;
         if(score>=level*CONFIG.levelUpScore){levelComplete();}
     }
-
-    // Explosions
     for(var i=explosions.length-1;i>=0;i--){
         if(!explosions[i].update(dt))explosions.splice(i,1);
     }
-
-    // Frog rotation
     frogGroup.rotation.y=aimAngle;
-
     renderer.render(scene,camera);
 }
 
@@ -263,12 +249,10 @@ function checkMatches(insertedBall){
     var color=insertedBall.userData.color;
     var matches=[insertedBall];
     var idx=ballsOnTrack.indexOf(insertedBall);
-    // Check backwards
     for(var i=idx-1;i>=0;i--){
         if(ballsOnTrack[i].userData.color===color)matches.push(ballsOnTrack[i]);
         else break;
     }
-    // Check forwards
     for(var i=idx+1;i<ballsOnTrack.length;i++){
         if(ballsOnTrack[i].userData.color===color)matches.push(ballsOnTrack[i]);
         else break;
@@ -299,7 +283,6 @@ function levelComplete(){
     }
 }
 
-var mouseX=0,mouseY=0;
 window.addEventListener('resize',function(){camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
 document.getElementById('high-score').textContent=highScore;
 animate();
