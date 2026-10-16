@@ -213,8 +213,8 @@ function animate(){
     }
     skybox.update(dt);
     for(var i=explosions.length-1;i>=0;i--){if(!explosions[i].update(dt))explosions.splice(i,1);}
-    if(shakeAmt<=0){camera.position.x=character.group.position.x*.5+Math.sin(Date.now()*.0003)*.2;camera.position.y=CONFIG.camera.position.y+Math.sin(Date.now()*.0005)*.1;}
-    camera.lookAt(character.group.position.x*.3,CONFIG.camera.lookAt.y,pZ-10);
+    if(shakeAmt<=0){camera.position.x=character.group.position.x*.4+Math.sin(Date.now()*.0003)*.15;camera.position.y=CONFIG.camera.position.y+Math.sin(Date.now()*.0005)*.08;}
+    camera.lookAt(character.group.position.x*.2,CONFIG.camera.lookAt.y,pZ-8);
     renderer.render(scene,camera);
 }
 window.addEventListener('resize',function(){camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});

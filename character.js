@@ -13,9 +13,6 @@ function createCharacter(config) {
     var eyeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: .1 });
     var le = new THREE.Mesh(new THREE.SphereGeometry(.04),eyeMat); le.position.set(-.09,.03,.2); headGroup.add(le);
     var re = new THREE.Mesh(new THREE.SphereGeometry(.04),eyeMat); re.position.set(.09,.03,.2); headGroup.add(re);
-    var eyeGlowMat = new THREE.MeshStandardMaterial({ color: char.accentColor, emissive: char.accentColor, emissiveIntensity: .6, transparent: true, opacity: .4 });
-    var leg = new THREE.Mesh(new THREE.SphereGeometry(.05),eyeGlowMat); leg.position.set(-.09,.03,.19); headGroup.add(leg);
-    var reg = new THREE.Mesh(new THREE.SphereGeometry(.05),eyeGlowMat); reg.position.set(.09,.03,.19); headGroup.add(reg);
     var mouth = new THREE.Mesh(new THREE.BoxGeometry(.07,.015,.015), new THREE.MeshStandardMaterial({color:0xcc6644})); mouth.position.set(0,-.1,.21); headGroup.add(mouth);
     var visor = new THREE.Mesh(new THREE.TorusGeometry(.22,.018,10,28,Math.PI), new THREE.MeshStandardMaterial({color:char.visorColor,emissive:char.visorColor,emissiveIntensity:.6,metalness:.8,roughness:.1})); visor.position.set(0,.07,.02); visor.rotation.x=-.3; headGroup.add(visor);
     group.add(headGroup);

@@ -2,7 +2,7 @@ function createTrail(config) {
     var count = 80, geo = new THREE.BufferGeometry(), pos = new Float32Array(count * 3), life = new Float32Array(count);
     for (var i = 0; i < count; i++) { pos[i*3+1] = -100; life[i] = 0; }
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    var mat = new THREE.PointsMaterial({ color: config.character.trailColor, size: .25, transparent: true, opacity: .9, blending: THREE.AdditiveBlending });
+    var mat = new THREE.PointsMaterial({ color: config.character.trailColor, size: .3, transparent: true, opacity: .9, blending: THREE.AdditiveBlending });
     var points = new THREE.Points(geo, mat), idx = 0;
     return { points: points,
         emit: function(x,y,z) { var i=idx%count; pos[i*3]=x; pos[i*3+1]=y; pos[i*3+2]=z; life[i]=1; idx++; },
@@ -14,25 +14,25 @@ function createExplosion(scene, color) {
     var count = 60, geo = new THREE.BufferGeometry(), pos = new Float32Array(count * 3), vel = [];
     for (var i = 0; i < count; i++) { pos[i*3+1]=1; vel.push(new THREE.Vector3((Math.random()-.5)*15, Math.random()*12, (Math.random()-.5)*15)); }
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    var mat = new THREE.PointsMaterial({ color: color, size: .35, transparent: true, opacity: 1, blending: THREE.AdditiveBlending });
+    var mat = new THREE.PointsMaterial({ color: color, size: .4, transparent: true, opacity: 1, blending: THREE.AdditiveBlending });
     var points = new THREE.Points(geo, mat); scene.add(points); var life = 1;
     return { points: points, update: function(dt) { life -= dt; if(life<=0){scene.remove(points);geo.dispose();mat.dispose();return false;} for(var i=0;i<count;i++){pos[i*3]+=vel[i].x*dt;pos[i*3+1]+=vel[i].y*dt;pos[i*3+2]+=vel[i].z*dt;vel[i].y-=20*dt;} mat.opacity=life; geo.attributes.position.needsUpdate=true; return true; } };
 }
 function createGround(config) {
     var group = new THREE.Group();
-    var groundGeo = new THREE.PlaneGeometry(50, 400);
-    var groundMat = new THREE.MeshStandardMaterial({ color: 0x0a0a15, metalness: 0.5, roughness: 0.5 });
+    var groundGeo = new THREE.PlaneGeometry(30, 400);
+    var groundMat = new THREE.MeshStandardMaterial({ color: 0x0a0a18, metalness: 0.3, roughness: 0.7 });
     var ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI/2; ground.position.set(0, 0, -100); ground.receiveShadow = true;
     group.add(ground);
-    var grid = new THREE.GridHelper(400, 150, 0x00c8ff, 0x111128);
-    grid.position.set(0, .01, -100); grid.material.opacity = .35; grid.material.transparent = true;
+    var grid = new THREE.GridHelper(400, 100, 0x00c8ff, 0x111128);
+    grid.position.set(0, .01, -100); grid.material.opacity = .25; grid.material.transparent = true;
     group.add(grid);
-    var railMat = new THREE.MeshStandardMaterial({ color: 0xff00c8, emissive: 0xff00c8, emissiveIntensity: 1, transparent: true, opacity: .9 });
-    var railGeo = new THREE.BoxGeometry(.2, .2, 400);
-    [-1,1].forEach(function(s){ var r=new THREE.Mesh(railGeo,railMat); r.position.set(s*5, .1, -100); group.add(r); });
-    var divMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x00c8ff, emissiveIntensity: .5, transparent: true, opacity: .25 });
-    for(var i=-1;i<=1;i+=2){ var d=new THREE.Mesh(new THREE.BoxGeometry(.08,.08,400),divMat); d.position.set(i*2.5,.05,-100); group.add(d); }
+    var railMat = new THREE.MeshStandardMaterial({ color: 0xff00c8, emissive: 0xff00c8, emissiveIntensity: 1.2, transparent: true, opacity: .9 });
+    var railGeo = new THREE.BoxGeometry(.15, .15, 400);
+    [-1,1].forEach(function(s){ var r=new THREE.Mesh(railGeo,railMat); r.position.set(s*4, .08, -100); group.add(r); });
+    var divMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x00c8ff, emissiveIntensity: .6, transparent: true, opacity: .3 });
+    for(var i=-1;i<=1;i+=2){ var d=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,400),divMat); d.position.set(i*2.5,.04,-100); group.add(d); }
     return group;
 }
 function createSkybox(config) {
@@ -59,54 +59,52 @@ function createDayNightCycle(scene, config) {
 }
 function createCity(scene) {
     var group = new THREE.Group();
-    var buildingCount = 40;
+    var buildingCount = 30;
     for (var i = 0; i < buildingCount; i++) {
         var side = i % 2 === 0 ? -1 : 1;
-        var w = 3 + Math.random() * 4;
-        var h = 5 + Math.random() * 20;
-        var d = 3 + Math.random() * 4;
+        var w = 4 + Math.random() * 5;
+        var h = 8 + Math.random() * 25;
+        var d = 4 + Math.random() * 5;
         var geo = new THREE.BoxGeometry(w, h, d);
-        var mat = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(.6 + Math.random()*.2, .3, .1 + Math.random()*.1), metalness:.5, roughness:.5 });
+        var mat = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(.6 + Math.random()*.2, .3, .08 + Math.random()*.12), metalness:.6, roughness:.4 });
         var building = new THREE.Mesh(geo, mat);
-        building.position.set(side * (8 + Math.random() * 5), h/2, -i * 15 - 20);
+        building.position.set(side * (7 + Math.random() * 4), h/2, -i * 12 - 15);
         building.castShadow = true; building.receiveShadow = true;
         group.add(building);
-        // Windows
-        var winMat = new THREE.MeshStandardMaterial({ color: 0x00c8ff, emissive: 0x00c8ff, emissiveIntensity: Math.random() > .5 ? .8 : .1, transparent: true, opacity: .8 });
-        for (var wy = 0; wy < h - 1; wy += 1.5) {
-            for (var wx = 0; wx < w - .5; wx += 1) {
-                if (Math.random() > .3) {
-                    var win = new THREE.Mesh(new THREE.PlaneGeometry(.4, .6), winMat);
+        var winMat = new THREE.MeshStandardMaterial({ color: 0x00c8ff, emissive: 0x00c8ff, emissiveIntensity: Math.random() > .4 ? 1 : .15, transparent: true, opacity: .9 });
+        for (var wy = 0; wy < h - 1; wy += 1.2) {
+            for (var wx = 0; wx < w - .5; wx += .8) {
+                if (Math.random() > .25) {
+                    var win = new THREE.Mesh(new THREE.PlaneGeometry(.5, .7), winMat);
                     win.position.set(wx - w/2 + .5, wy - h/2 + .5, d/2 + .01);
                     building.add(win);
                 }
             }
         }
     }
-    // Street lights
-    for (var i = 0; i < 20; i++) {
+    for (var i = 0; i < 15; i++) {
         var side = i % 2 === 0 ? -1 : 1;
-        var poleGeo = new THREE.CylinderGeometry(.05, .05, 4);
-        var poleMat = new THREE.MeshStandardMaterial({ color: 0x333344, metalness: .8, roughness: .2 });
+        var poleGeo = new THREE.CylinderGeometry(.06, .06, 5);
+        var poleMat = new THREE.MeshStandardMaterial({ color: 0x444455, metalness: .9, roughness: .1 });
         var pole = new THREE.Mesh(poleGeo, poleMat);
-        pole.position.set(side * 6, 2, -i * 25 - 10);
+        pole.position.set(side * 5.5, 2.5, -i * 20 - 8);
         group.add(pole);
-        var lightGeo = new THREE.SphereGeometry(.15);
-        var lightMat = new THREE.MeshStandardMaterial({ color: 0x00c8ff, emissive: 0x00c8ff, emissiveIntensity: 1.5 });
+        var lightGeo = new THREE.SphereGeometry(.2);
+        var lightMat = new THREE.MeshStandardMaterial({ color: 0x00c8ff, emissive: 0x00c8ff, emissiveIntensity: 2 });
         var light = new THREE.Mesh(lightGeo, lightMat);
-        light.position.set(side * 6, 4.1, -i * 25 - 10);
+        light.position.set(side * 5.5, 5.1, -i * 20 - 8);
         group.add(light);
-        var glow = new THREE.PointLight(0x00c8ff, .5, 8);
+        var glow = new THREE.PointLight(0x00c8ff, .8, 10);
         glow.position.copy(light.position);
         group.add(glow);
     }
     scene.add(group);
     return { group: group, update: function(dt, gameSpeed, pZ) {
         group.children.forEach(function(child) {
-            if (child.position.z > pZ + 50) {
-                child.position.z -= 400;
-                if (child.position.x > 7 || child.position.x < -7) {
-                    child.position.x = (child.position.x > 0 ? 1 : -1) * (8 + Math.random() * 5);
+            if (child.position.z > pZ + 40) {
+                child.position.z -= 360;
+                if (child.position.x > 6 || child.position.x < -6) {
+                    child.position.x = (child.position.x > 0 ? 1 : -1) * (7 + Math.random() * 4);
                     child.position.y = child.geometry.parameters.height / 2;
                 }
             }
