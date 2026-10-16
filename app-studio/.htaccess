@@ -1,0 +1,10 @@
+# Protect the lead log and other sensitive files from direct web access.
+<FilesMatch "(?i)\.(log|sql|md)$">
+    Require all denied
+</FilesMatch>
+
+# Block the raw log directory entirely.
+RedirectMatch 403 ^/app-studio/logs/.*$
+
+# Do not list directory contents.
+Options -Indexes
