@@ -1,65 +1,46 @@
-/**
- * start.ng integration module.
- * Talks to start.ng's hidden connect page via postMessage.
- */
-
-const START_NG = 'https://start.ng';
-let frame;
+var START_NG = 'https://start.ng';
+var _startNgFrame = null;
 
 function connectFrame() {
-    frame ??= new Promise((resolve, reject) => {
-        const el = document.createElement('iframe');
-        el.src = `${START_NG}/connect`;
+    if (_startNgFrame) return _startNgFrame;
+    _startNgFrame = new Promise(function(resolve, reject) {
+        var el = document.createElement('iframe');
+        el.src = START_NG + '/connect';
         el.hidden = true;
-        el.onload = () => resolve(el);
+        el.onload = function() { resolve(el); };
         el.onerror = reject;
-        document.body.append(el);
+        document.body.appendChild(el);
     });
-    return frame;
+    return _startNgFrame;
 }
 
-async function askStartNg(message, replyType, timeoutMs = 5000) {
-    const el = await connectFrame();
-    return new Promise((resolve) => {
-        const requestId = Math.random().toString(36).slice(2);
-        const done = (reply) => { clearTimeout(timer); removeEventListener('message', onMessage); resolve(reply); };
-        const timer = setTimeout(() => done(null), timeoutMs);
-        function onMessage(e) {
-            if (e.origin !== START_NG || e.source !== el.contentWindow) return;
-            if (e.data?.type === replyType && e.data.requestId === requestId) done(e.data);
-        }
-        addEventListener('message', onMessage);
-        el.contentWindow.postMessage({ ...message, requestId }, START_NG);
+function askStartNg(message, replyType, timeoutMs) {
+    timeoutMs = timeoutMs || 5000;
+    return connectFrame().then(function(el) {
+        return new Promise(function(resolve) {
+            var requestId = Math.random().toString(36).slice(2);
+            var done = function(reply) { clearTimeout(timer); removeEventListener('message', onMessage); resolve(reply); };
+            var timer = setTimeout(function() { done(null); }, timeoutMs);
+            function onMessage(e) {
+                if (e.origin !== START_NG || e.source !== el.contentWindow) return;
+                if (e.data && e.data.type === replyType && e.data.requestId === requestId) done(e.data);
+            }
+            addEventListener('message', onMessage);
+            el.contentWindow.postMessage(Object.assign({}, message, { requestId: requestId }), START_NG);
+        });
     });
 }
 
-export async function initStartNg() {
-    try {
-        const reply = await askStartNg({ type: 'startng:whoami' }, 'startng:user');
-        return reply?.user ?? reply?.guest ?? null;
-    } catch {
-        return null;
-    }
+function initStartNg() {
+    return askStartNg({ type: 'startng:whoami' }, 'startng:user').then(function(reply) {
+        return (reply && reply.user) || (reply && reply.guest) || null;
+    }).catch(function() { return null; });
 }
 
-export async function saveStartNgScore(stats) {
-    try {
-        const reply = await askStartNg({ type: 'startng:score', stats }, 'startng:scoreSaved');
-        return reply;
-    } catch {
-        return { ok: false, error: 'Network error' };
-    }
+function saveStartNgScore(stats) {
+    return askStartNg({ type: 'startng:score', stats: stats }, 'startng:scoreSaved').catch(function() { return { ok: false }; });
 }
 
-export async function getStartNgLeaderboard(limit = 10) {
-    try {
-        const reply = await askStartNg({ type: 'startng:leaderboard', limit }, 'startng:leaderboardData');
-        return reply;
-    } catch {
-        return { ok: false, entries: [] };
-    }
-}
-
-export function signInStartNg() {
-    location.href = `https://start.ng/?return_to=${encodeURIComponent(location.origin + location.pathname)}`;
+function signInStartNg() {
+    location.href = START_NG + '/?return_to=' + encodeURIComponent(location.origin + location.pathname);
 }

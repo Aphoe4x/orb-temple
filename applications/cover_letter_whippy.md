@@ -1,0 +1,9 @@
+# Cover Letter — Whippy (Software Engineer: Backend)
+
+I'm a backend engineer with 3+ years of professional experience building and maintaining production web services — REST APIs, payment integrations with webhooks, and MySQL-backed applications — and Whippy's API-first, async culture is exactly the environment where I do my best work.
+
+At Artgidi (remote contract, Sep 2024 – Nov 2025) I built and maintained backend features in PHP/Laravel on a live production application: resolving performance and reliability bugs, optimizing MySQL queries as data grew, and integrating third-party payment APIs including server-to-server calls and webhook handling with idempotent order flows. At Mployus (UK & Ireland) I wired frontend components to a Laravel backend and supported live deployments, coordinating asynchronously with stakeholders across time zones — turning client feedback into scoped, testable technical action.
+
+On my own projects I've built exactly the kind of API surface you describe: a full-stack e-commerce application with a Node.js/Express REST API (products, orders, auth endpoints), Supabase/PostgreSQL data layer, Google OAuth 2.0, and Mailgun transactional email — with the SQL schema designed by hand. And on my Laravel Booking System, double-booking prevention is enforced at the database layer (transactional locking + unique indexes), not just in application code — the kind of correctness-under-concurrency thinking your message-processing APIs demand. I write clear documentation and requirement notes as part of how I work, and I'm comfortable owning tickets from idea through implementation to rollout and monitoring.
+
+Your process appeals to me: no leetcode, a real paid work trial. I can commit to the 2-week full-time trial and am available for meetings at 2:30pm GMT (3:30pm Lagos time). Written English fluency is a genuine strength of mine — it's how I've run every remote engagement so far.

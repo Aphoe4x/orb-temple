@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Runner — start.ng Game</title>
+    <title>Neon Runner</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="game-container"></div>
 
-    <!-- start.ng Player Card -->
     <div id="player-card" class="hidden">
         <img id="player-face" alt="Player face">
         <div class="player-info">
@@ -19,67 +18,34 @@
         <button id="player-sign-in" class="hidden">Sign in</button>
     </div>
 
-    <!-- HUD -->
     <div id="hud">
         <div id="score-panel">
-            <div class="hud-item">
-                <span class="hud-label">SCORE</span>
-                <span id="score">0</span>
-            </div>
-            <div class="hud-item">
-                <span class="hud-label">COINS</span>
-                <span id="coins">0</span>
-            </div>
-            <div class="hud-item">
-                <span class="hud-label">BEST</span>
-                <span id="high-score">0</span>
-            </div>
+            <div class="hud-item"><span class="hud-label">SCORE</span><span id="score">0</span></div>
+            <div class="hud-item"><span class="hud-label">COINS</span><span id="coins">0</span></div>
+            <div class="hud-item"><span class="hud-label">BEST</span><span id="high-score">0</span></div>
         </div>
-        <div id="speed-indicator">
-            <span class="hud-label">SPEED</span>
-            <div id="speed-bar"><div id="speed-fill"></div></div>
-        </div>
+        <div id="speed-indicator"><span class="hud-label">SPEED</span><div id="speed-bar"><div id="speed-fill"></div></div></div>
     </div>
-
     <div id="combo-display" class="hidden">COMBO x2</div>
-
-    <div id="powerup-container" class="hidden">
-        <span id="powerup-display">SHIELD ACTIVE</span>
-        <div id="powerup-bar"><div id="powerup-timer"></div></div>
-    </div>
-
-    <div id="boss-health-container" class="hidden">
-        <span class="boss-label">BOSS</span>
-        <div id="boss-health-bar"><div id="boss-health-fill"></div></div>
-    </div>
-
+    <div id="powerup-container" class="hidden"><span id="powerup-display">SHIELD ACTIVE</span><div id="powerup-bar"><div id="powerup-timer"></div></div></div>
+    <div id="boss-health-container" class="hidden"><span class="boss-label">BOSS</span><div id="boss-health-bar"><div id="boss-health-fill"></div></div></div>
     <div id="unlock-notification" class="hidden">NEW SKIN UNLOCKED!</div>
 
-    <!-- Start Screen -->
     <div id="start-screen" class="overlay">
         <div class="panel">
             <h1>NEON RUNNER</h1>
-            <p class="subtitle">A 3D Endless Runner</p>
+            <p class="subtitle">3D Endless Runner</p>
             <div class="controls-info">
-                <div class="control"><kbd>A</kbd> / <kbd>&#8592;</kbd> Move Left</div>
-                <div class="control"><kbd>D</kbd> / <kbd>&#8594;</kbd> Move Right</div>
-                <div class="control"><kbd>W</kbd> / <kbd>&#8593;</kbd> / <kbd>Space</kbd> Jump</div>
-                <div class="control"><kbd>S</kbd> / <kbd>&#8595;</kbd> Slide</div>
-            </div>
-            <div class="features-list">
-                <span>Power-ups</span>
-                <span>Combos</span>
-                <span>Boss Battles</span>
-                <span>Weather</span>
-                <span>Day/Night</span>
-                <span>Unlockables</span>
+                <div class="control"><kbd>A</kbd>/<kbd>&#8592;</kbd> Left</div>
+                <div class="control"><kbd>D</kbd>/<kbd>&#8594;</kbd> Right</div>
+                <div class="control"><kbd>W</kbd>/<kbd>Space</kbd> Jump</div>
+                <div class="control"><kbd>S</kbd>/<kbd>&#8595;</kbd> Slide</div>
             </div>
             <button id="btn-start" class="btn-primary">START GAME</button>
             <p class="hint">Press <kbd>Enter</kbd> to start</p>
         </div>
     </div>
 
-    <!-- Game Over Screen -->
     <div id="gameover-screen" class="overlay hidden">
         <div class="panel">
             <h1>GAME OVER</h1>
@@ -94,28 +60,17 @@
         </div>
     </div>
 
-    <!-- Pause Screen -->
     <div id="pause-screen" class="overlay hidden">
-        <div class="panel">
-            <h1>PAUSED</h1>
-            <button id="btn-resume" class="btn-primary">RESUME</button>
-            <p class="hint">Press <kbd>Esc</kbd> to resume</p>
-        </div>
+        <div class="panel"><h1>PAUSED</h1><button id="btn-resume" class="btn-primary">RESUME</button></div>
     </div>
 
-    <!-- start.ng user badge -->
-    <div id="user-badge" class="hidden">
-        <span id="user-name">Guest</span>
-    </div>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-        }
-    }
-    </script>
-    <script type="module" src="game.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="config.js"></script>
+    <script src="audio.js"></script>
+    <script src="startng.js"></script>
+    <script src="effects.js"></script>
+    <script src="obstacles.js"></script>
+    <script src="character.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
