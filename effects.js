@@ -25,15 +25,12 @@ function createGround(config) {
     var ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI/2; ground.position.set(0, 0, -80); ground.receiveShadow = true;
     group.add(ground);
-    // Scrolling grid
     var gridHelper = new THREE.GridHelper(300, 120, config.character.accentColor, config.world.groundAccentColor);
     gridHelper.position.set(0, 0.01, -80); gridHelper.material.opacity = 0.3; gridHelper.material.transparent = true;
     group.add(gridHelper);
-    // Side rails
     var railMat = new THREE.MeshStandardMaterial({ color: config.character.accentColor, emissive: config.character.accentColor, emissiveIntensity: 0.8, transparent: true, opacity: 0.8 });
     var railGeo = new THREE.BoxGeometry(0.15, 0.15, 300);
     [-1, 1].forEach(function(s) { var r = new THREE.Mesh(railGeo, railMat); r.position.set(s*(config.gameplay.laneWidth+1.5), 0.08, -80); group.add(r); });
-    // Lane dividers
     var divMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: config.character.bodyColor, emissiveIntensity: 0.4, transparent: true, opacity: 0.2 });
     for (var i = -1; i <= 1; i += 2) { var d = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 300), divMat); d.position.set(i*config.gameplay.laneWidth, 0.04, -80); group.add(d); }
     return group;
@@ -45,18 +42,6 @@ function createSkybox(config) {
     var mat = new THREE.PointsMaterial({ size: .3, transparent: true, opacity: .6, vertexColors: true, blending: THREE.AdditiveBlending });
     var stars = new THREE.Points(geo, mat);
     return { stars: stars, update: function(dt) { var p=stars.geometry.attributes.position.array; for(var i=0;i<count;i++){p[i*3+1]+=dt*.5;if(p[i*3+1]>65)p[i*3+1]=5;} stars.geometry.attributes.position.needsUpdate=true; } };
-}
-function createWeather(scene, config) {
-    var count = config.weather ? config.weather.rainParticleCount || 400 : 400;
-    var geo = new THREE.BufferGeometry(), pos = new Float32Array(count*3);
-    for (var i = 0; i < count; i++) { pos[i*3]=(Math.random()-.5)*50; pos[i*3+1]=Math.random()*35; pos[i*3+2]=(Math.random()-.5)*80-10; }
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    var mat = new THREE.PointsMaterial({ color: 0x8888ff, size: .1, transparent: true, opacity: .5 });
-    var rain = new THREE.Points(geo, mat); rain.visible = false; scene.add(rain);
-    var la = false, lt = 0;
-    return { rain: rain, setWeather: function(t) { rain.visible = (t==='rain'||t==='storm'); },
-        update: function(dt, storm) { if(rain.visible){var p=rain.geometry.attributes.position.array;for(var i=0;i<count;i++){p[i*3+1]-=dt*30;if(p[i*3+1]<0){p[i*3+1]=35;p[i*3]=(Math.random()-.5)*50;}}rain.geometry.attributes.position.needsUpdate=true;} if(storm){lt-=dt;if(lt<=0){lt=3+Math.random()*5;la=true;setTimeout(function(){la=false;},150);}} },
-        isLightning: function() { return la; } };
 }
 function createDayNightCycle(scene, config) {
     var time = 0;

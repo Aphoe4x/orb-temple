@@ -31,12 +31,6 @@ function createPowerup(type, config) {
     var lanes = [-config.gameplay.laneWidth,0,config.gameplay.laneWidth]; g.position.set(lanes[Math.floor(Math.random()*3)], 1.5, -60);
     return { mesh: g, type: type, update: function(dt,gs){g.position.z+=gs*dt;g.rotation.y+=2*dt;g.position.y=1.5+Math.sin(Date.now()*.004)*.2;}, isOffScreen:function(){return g.position.z>15;}, dispose:function(m){if(m)m.removeFromParent();} };
 }
-function createSpeedZone(config) {
-    var g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: config.speedZones.color, transparent: true, opacity: .4, emissive: config.speedZones.color, emissiveIntensity: .6, side: THREE.DoubleSide });
-    var pad = new THREE.Mesh(new THREE.PlaneGeometry(config.gameplay.laneWidth*.8,4), mat); pad.rotation.x=-Math.PI/2; pad.position.y=.02; g.add(pad);
-    var lanes = [-config.gameplay.laneWidth,0,config.gameplay.laneWidth]; g.position.set(lanes[Math.floor(Math.random()*3)], 0, -60);
-    return { mesh: g, update: function(dt,gs){g.position.z+=gs*dt;mat.opacity=.3+Math.sin(Date.now()*.005)*.15;}, isOffScreen:function(){return g.position.z>15;}, dispose:function(m){if(m)m.removeFromParent();} };
-}
 function createBoss(config) {
     var g = new THREE.Group(), color = config.boss.color;
     var bm = new THREE.MeshStandardMaterial({ color: color, metalness: .7, roughness: .2, emissive: color, emissiveIntensity: .5 });

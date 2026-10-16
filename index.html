@@ -8,13 +8,11 @@
 </head>
 <body>
     <div id="game-container"></div>
-
     <div id="player-card" class="hidden">
         <img id="player-face" alt="">
         <div class="player-info"><b id="player-name">Player</b><span id="player-account"></span></div>
         <button id="player-sign-in" class="hidden">Sign in</button>
     </div>
-
     <div id="hud">
         <div id="score-panel">
             <div class="hud-item"><span class="hud-label">SCORE</span><span id="score">0</span></div>
@@ -29,26 +27,21 @@
     <div id="unlock-notification" class="hidden"></div>
     <div id="mobile-controls" class="hidden">
         <div id="joystick-zone"><div id="joystick-base"><div id="joystick-knob"></div></div></div>
-        <div id="mobile-buttons">
-            <button id="btn-jump">JUMP</button>
-            <button id="btn-slide">SLIDE</button>
-        </div>
+        <div id="mobile-buttons"><button id="btn-jump">JUMP</button><button id="btn-slide">SLIDE</button></div>
     </div>
-
     <div id="start-screen" class="overlay">
         <div class="panel">
             <h1>NEON RUNNER</h1>
             <p class="subtitle">3D Endless Runner</p>
             <div class="controls-info">
-                <div class="control"><kbd>A</kbd>/<kbd>D</kbd> or <kbd>&#8592;</kbd>/<kbd>&#8594;</kbd> Move</div>
+                <div class="control"><kbd>A</kbd>/<kbd>D</kbd> Move</div>
                 <div class="control"><kbd>W</kbd>/<kbd>Space</kbd> Jump</div>
-                <div class="control"><kbd>S</kbd>/<kbd>&#8595;</kbd> Slide</div>
+                <div class="control"><kbd>S</kbd> Slide</div>
             </div>
             <button id="btn-start" class="btn-primary">START GAME</button>
             <p class="hint">Press <kbd>Enter</kbd></p>
         </div>
     </div>
-
     <div id="gameover-screen" class="overlay hidden">
         <div class="panel">
             <h1>GAME OVER</h1>
@@ -61,11 +54,9 @@
             <button id="btn-restart" class="btn-primary">PLAY AGAIN</button>
         </div>
     </div>
-
     <div id="pause-screen" class="overlay hidden">
         <div class="panel"><h1>PAUSED</h1><button id="btn-resume" class="btn-primary">RESUME</button></div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
     <script src="config.js"></script>
     <script src="audio.js"></script>
