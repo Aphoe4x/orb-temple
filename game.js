@@ -8,92 +8,82 @@ var shootingBalls=[];
 var explosions=[];
 var currentColor=0, nextColor=1;
 var aimAngle=0;
-var startNgPlayer=null;
+var pathPoints=[];
+var frogGroup, ballMat;
 
 // THREE SETUP
 var container=document.getElementById('game-container');
 var scene=new THREE.Scene();
 scene.background=new THREE.Color(0x0a0a15);
-scene.fog=new THREE.FogExp2(0x0a0a15,0.008);
 var camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,.1,100);
 camera.position.set(0,14,12);
 camera.lookAt(0,0,0);
 var renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth,window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.2;
 container.appendChild(renderer.domElement);
 
-// LIGHTS
 scene.add(new THREE.AmbientLight(0x606080,0.7));
 var dirLight=new THREE.DirectionalLight(0xffffff,1.2);
 dirLight.position.set(5,15,10);
 dirLight.castShadow=true;
-dirLight.shadow.mapSize.width=1024;
-dirLight.shadow.mapSize.height=1024;
 scene.add(dirLight);
 
 var audio=createAudio(CONFIG);
 
-// TEMPLE FLOOR
-var floorGeo=new THREE.CircleGeometry(18,32);
-var floorMat=new THREE.MeshStandardMaterial({color:0x1a1a2e,metalness:0.4,roughness:0.6});
-var floor=new THREE.Mesh(floorGeo,floorMat);
+// FLOOR
+var floor=new THREE.Mesh(new THREE.CircleGeometry(18,32),new THREE.MeshStandardMaterial({color:0x1a1a2e}));
 floor.rotation.x=-Math.PI/2;
-floor.position.y=-0.5;
+floor.position.y=-0.3;
 floor.receiveShadow=true;
 scene.add(floor);
 
-// Decorative rings
+// RINGS
 for(var i=0;i<3;i++){
     var ring=new THREE.Mesh(new THREE.TorusGeometry(4+i*4,0.15,8,32),new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xffd700,emissiveIntensity:0.5}));
     ring.rotation.x=Math.PI/2;
-    ring.position.y=-0.3;
+    ring.position.y=-0.2;
     scene.add(ring);
 }
 
 // SPIRAL PATH
-var pathPoints=[];
-var totalPoints=100;
+var totalPoints=120;
 for(var i=0;i<totalPoints;i++){
     var t=i/totalPoints;
-    var angle=t*Math.PI*4;
-    var radius=10*(1-t*0.6);
+    var angle=t*Math.PI*5;
+    var radius=11*(1-t*0.5);
     pathPoints.push(new THREE.Vector3(Math.cos(angle)*radius,0,Math.sin(angle)*radius));
 }
 
-// Draw path as small spheres
+// PATH DOTS
 var pathMat=new THREE.MeshStandardMaterial({color:0x334455,emissive:0x112233,emissiveIntensity:0.3});
-for(var i=0;i<pathPoints.length;i+=2){
-    var dot=new THREE.Mesh(new THREE.SphereGeometry(0.15,8,8),pathMat);
+for(var i=0;i<pathPoints.length;i+=3){
+    var dot=new THREE.Mesh(new THREE.SphereGeometry(0.12,8,8),pathMat);
     dot.position.copy(pathPoints[i]);
     scene.add(dot);
 }
 
-// End hole
-var endPoint=pathPoints[pathPoints.length-1];
+// END HOLE
 var endHole=new THREE.Mesh(new THREE.CircleGeometry(0.6,16),new THREE.MeshStandardMaterial({color:0x000000,emissive:0xff0000,emissiveIntensity:0.8}));
 endHole.rotation.x=-Math.PI/2;
-endHole.position.set(endPoint.x,-0.2,endPoint.z);
+var endPoint=pathPoints[pathPoints.length-1];
+endHole.position.set(endPoint.x,-0.1,endPoint.z);
 scene.add(endHole);
 
-// FROG SHOOTER
-var frogGroup=new THREE.Group();
-var frogBodyMat=new THREE.MeshStandardMaterial({color:0x44aa44,metalness:0.3,roughness:0.5});
-var frogBody=new THREE.Mesh(new THREE.SphereGeometry(0.5,16,16),frogBodyMat);
+// FROG
+frogGroup=new THREE.Group();
+var frogMat=new THREE.MeshStandardMaterial({color:0x44aa44,metalness:0.3,roughness:0.5});
+var frogBody=new THREE.Mesh(new THREE.SphereGeometry(0.5,16,16),frogMat);
 frogBody.scale.set(1,0.8,1.2);
 frogBody.position.y=0.3;
 frogGroup.add(frogBody);
-var frogHead=new THREE.Mesh(new THREE.SphereGeometry(0.35,16,16),frogBodyMat);
+var frogHead=new THREE.Mesh(new THREE.SphereGeometry(0.35,16,16),frogMat);
 frogHead.position.set(0,0.7,0.2);
 frogGroup.add(frogHead);
 var eyeMat=new THREE.MeshStandardMaterial({color:0xffff00,emissive:0xffff00,emissiveIntensity:0.6});
 var le=new THREE.Mesh(new THREE.SphereGeometry(0.1),eyeMat); le.position.set(-0.15,0.85,0.45); frogGroup.add(le);
 var re=new THREE.Mesh(new THREE.SphereGeometry(0.1),eyeMat); re.position.set(0.15,0.85,0.45); frogGroup.add(re);
-var ballMat=new THREE.MeshStandardMaterial({color:CONFIG.orbColors[0],metalness:0.5,roughness:0.2,emissive:CONFIG.orbColors[0],emissiveIntensity:0.4});
+ballMat=new THREE.MeshStandardMaterial({color:CONFIG.orbColors[0],metalness:0.5,roughness:0.2,emissive:CONFIG.orbColors[0],emissiveIntensity:0.4});
 var currentBall=new THREE.Mesh(new THREE.SphereGeometry(CONFIG.orbRadius,16,16),ballMat);
 currentBall.position.set(0,0.5,0.7);
 frogGroup.add(currentBall);
@@ -105,9 +95,9 @@ document.getElementById('btn-restart').addEventListener('click',function(){audio
 
 // INPUT
 document.addEventListener('mousemove',function(e){
-    var mouseX=(e.clientX/window.innerWidth)*2-1;
-    var mouseY=-(e.clientY/window.innerHeight)*2+1;
-    aimAngle=Math.atan2(mouseX,mouseY);
+    var mx=(e.clientX/window.innerWidth)*2-1;
+    var my=-(e.clientY/window.innerHeight)*2+1;
+    aimAngle=Math.atan2(mx,my);
 });
 document.addEventListener('click',function(e){
     if(gameState!==STATE.PLAYING)return;
@@ -132,7 +122,7 @@ function shoot(){
     var mat=new THREE.MeshStandardMaterial({color:color,metalness:0.5,roughness:0.2,emissive:color,emissiveIntensity:0.4});
     var ball=new THREE.Mesh(new THREE.SphereGeometry(CONFIG.orbRadius,16,16),mat);
     var dir=new THREE.Vector3(Math.sin(aimAngle),0,Math.cos(aimAngle));
-    ball.position.set(dir.x*0.8,0.5,dir.z*0.8);
+    ball.position.set(dir.x*0.8,0,dir.z*0.8);
     ball.userData={dir:dir,speed:CONFIG.shootSpeed,color:currentColor};
     scene.add(ball);
     shootingBalls.push(ball);
@@ -151,7 +141,7 @@ function spawnBall(){
     var ball=new THREE.Mesh(new THREE.SphereGeometry(CONFIG.orbRadius,16,16),mat);
     var pos=pathPoints[0];
     ball.position.set(pos.x,0,pos.z);
-    ball.userData={color:colorIdx,pathIndex:0,speed:CONFIG.ballSpeed*(1+level*0.1)};
+    ball.userData={color:colorIdx,pathIndex:0,speed:CONFIG.ballSpeed*(1+level*0.08),radius:CONFIG.orbRadius};
     scene.add(ball);
     ballsOnTrack.push(ball);
 }
@@ -173,7 +163,7 @@ function startGame(){
     gameState=STATE.PLAYING;
     audio.startMusic();
     for(var i=0;i<5;i++){
-        setTimeout(function(){spawnBall();},i*600);
+        setTimeout(function(){spawnBall();},i*800);
     }
 }
 
@@ -196,13 +186,21 @@ function animate(){
     var dt=Math.min(clock.getDelta(),0.05);
     if(gameState===STATE.PLAYING){
         spawnTimer+=dt;
-        if(spawnTimer>=1.5){spawnTimer=0;spawnBall();}
-        for(var i=ballsOnTrack.length-1;i>=0;i--){
+        if(spawnTimer>=1.8){spawnTimer=0;spawnBall();}
+
+        // Move balls along path with proper spacing
+        var ballSpacing=CONFIG.orbRadius*2.2;
+        for(var i=0;i<ballsOnTrack.length;i++){
             var ball=ballsOnTrack[i];
-            ball.userData.pathIndex+=ball.userData.speed*dt;
+            if(i===0){
+                ball.userData.pathIndex+=ball.userData.speed*dt;
+            }else{
+                var prevBall=ballsOnTrack[i-1];
+                var prevIdx=prevBall.userData.pathIndex;
+                var maxIdx=prevIdx-(ballSpacing/10);
+                ball.userData.pathIndex=Math.min(ball.userData.pathIndex+ball.userData.speed*dt,maxIdx);
+            }
             if(ball.userData.pathIndex>=pathPoints.length-1){
-                scene.remove(ball);
-                ballsOnTrack.splice(i,1);
                 gameOver();
                 return;
             }
@@ -212,28 +210,39 @@ function animate(){
             var pos=pathPoints[idx].clone().lerp(pathPoints[nextIdx],t);
             ball.position.set(pos.x,0,pos.z);
         }
+
+        // Move shooting balls and check collision
         for(var i=shootingBalls.length-1;i>=0;i--){
             var sb=shootingBalls[i];
             sb.position.add(sb.userData.dir.clone().multiplyScalar(sb.userData.speed*dt));
-            for(var j=ballsOnTrack.length-1;j>=0;j--){
+            var hit=false;
+            for(var j=0;j<ballsOnTrack.length;j++){
                 var tb=ballsOnTrack[j];
-                if(sb.position.distanceTo(tb.position)<CONFIG.orbRadius*2.2){
+                if(sb.position.distanceTo(tb.position)<CONFIG.orbRadius*2){
+                    // Insert ball into track
                     var newBall=new THREE.Mesh(new THREE.SphereGeometry(CONFIG.orbRadius,16,16),new THREE.MeshStandardMaterial({color:CONFIG.orbColors[sb.userData.color],metalness:.5,roughness:.2,emissive:CONFIG.orbColors[sb.userData.color],emissiveIntensity:.4}));
-                    newBall.position.copy(sb.position);
-                    newBall.userData={color:sb.userData.color,pathIndex:tb.userData.pathIndex,speed:tb.userData.speed};
+                    newBall.userData={color:sb.userData.color,pathIndex:tb.userData.pathIndex,speed:tb.userData.speed,radius:CONFIG.orbRadius};
+                    // Insert at correct position
+                    if(sb.position.distanceTo(pathPoints[Math.floor(tb.userData.pathIndex)])<CONFIG.orbRadius){
+                        ballsOnTrack.splice(j,0,newBall);
+                    }else{
+                        ballsOnTrack.splice(j+1,0,newBall);
+                    }
                     scene.add(newBall);
-                    ballsOnTrack.push(newBall);
                     scene.remove(sb);
                     shootingBalls.splice(i,1);
                     checkMatches(newBall);
+                    hit=true;
                     break;
                 }
             }
-            if(sb.position.length()>25){
+            if(hit)continue;
+            if(sb.position.length()>30){
                 scene.remove(sb);
                 shootingBalls.splice(i,1);
             }
         }
+
         if(combo>0){combo-=dt;if(combo<=0)combo=0;}
         document.getElementById('score').textContent=score;
         if(score>=level*CONFIG.levelUpScore){levelComplete();}
@@ -249,10 +258,12 @@ function checkMatches(insertedBall){
     var color=insertedBall.userData.color;
     var matches=[insertedBall];
     var idx=ballsOnTrack.indexOf(insertedBall);
+    // Check backwards
     for(var i=idx-1;i>=0;i--){
         if(ballsOnTrack[i].userData.color===color)matches.push(ballsOnTrack[i]);
         else break;
     }
+    // Check forwards
     for(var i=idx+1;i<ballsOnTrack.length;i++){
         if(ballsOnTrack[i].userData.color===color)matches.push(ballsOnTrack[i]);
         else break;
@@ -279,7 +290,7 @@ function levelComplete(){
     ballsOnTrack.forEach(function(b){scene.remove(b);});
     ballsOnTrack=[];
     for(var i=0;i<5+level;i++){
-        setTimeout(function(){spawnBall();},i*500);
+        setTimeout(function(){spawnBall();},i*600);
     }
 }
 
